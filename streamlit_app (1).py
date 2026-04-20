@@ -18,6 +18,15 @@ def load_model():
         st.error("Error: best_model.pkl not found. Please ensure it's in the same directory as this app.")
         st.stop()
 
+# Load dataset (for dropdown values )
+try:
+    df = pd.read_csv("Salary_Dataset_DataScienceLovers.csv")
+except:
+    st.error("Dataset not found")
+    st.stop()
+
+    
+
 model = load_model()
 
 st.header("Enter Employee Details")
