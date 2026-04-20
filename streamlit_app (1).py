@@ -1,59 +1,87 @@
-
 import streamlit as st
 import pandas as pd
 import pickle
+from sklearn.preprocessing import LabelEncoder
 
 st.set_page_config(page_title="Salary Prediction App", layout="centered")
 
-st.title("Salary Prediction for Data Science Lovers")
-st.write("This app predicts salary based on various input features using a Linear Regression model.")
+st.title("💰 Salary Prediction App")
+st.write("Predict salary using categorical inputs (dropdowns).")
 
-# Load the trained model
+# Load model
 @st.cache_resource
 def load_model():
-    try:
-        model = pickle.load(open('best_model.pkl', 'rb'))
-        return model
-    except FileNotFoundError:
-        st.error("Error: best_model.pkl not found. Please ensure it's in the same directory as this app.")
-        st.stop()
+    with open('best_model.pkl', 'rb') as file:
+        return pickle.load(file)
 
-# Load dataset (for dropdown values )
+model = load_model()
+
+# Load dataset
 try:
     df = pd.read_csv("Salary_Dataset_DataScienceLovers.csv")
 except:
     st.error("Dataset not found")
     st.stop()
 
-    
+st.header("📌 Enter Employee Details")
 
-model = load_model()
+# Create encoders for each categorical column
+encoders = {}
 
-st.header("Enter Employee Details")
+categorical_cols = [
+    'Company Name', 'Job Title', 'Location',
+    'Employment Status', 'Job Roles'
+]
 
-# Input features (assuming numerical input for encoded categorical features)
-rating = st.number_input('Rating (e.g., 3.8)', min_value=1.0, max_value=5.0, value=3.8, step=0.1)
-company_name = st.number_input('Company Name (Encoded Numerical Value)', min_value=0, value=5554)
-job_title = st.number_input('Job Title (Encoded Numerical Value)', min_value=0, value=23)
-salaries_reported = st.number_input('Salaries Reported', min_value=1.0, value=3.0, step=1.0)
-location = st.number_input('Location (Encoded Numerical Value)', min_value=0, value=0)
-employment_status = st.number_input('Employment Status (Encoded Numerical Value)', min_value=0, value=0)
-job_roles = st.number_input('Job Roles (Encoded Numerical Value)', min_value=0, value=0)
+for col in categorical_cols:
+    le = LabelEncoder()
+    df[col] = le.fit_transform(df[col])
+    encoders[col] = le
 
-# Make prediction
-if st.button('Predict Salary'):
-    # Create a DataFrame for prediction
-    features = pd.DataFrame([[
-        rating,
-        company_name,
-        job_title,
-        salaries_reported,
-        location,
-        employment_status,
-        job_roles
-    ]], columns=['Rating', 'Company Name', 'Job Title', 'Salaries Reported', 'Location', 'Employment Status', 'Job Roles'])
+# Dropdown inputs (original values)
+rating = st.number_input('Rating', min_value=1.0, max_value=5.0, value=3.8)
 
-    prediction = model.predict(features)[0]
+company_name = st.selectbox(
+    'Company Name', encoders['Company Name'].classes_
+)
 
-    st.success(f"Predicted Salary: ₹{prediction:,.2f}")
-    st.write("**Note:** For 'Company Name', 'Job Title', 'Location', 'Employment Status', and 'Job Roles', please enter the numerical values that correspond to your data's label encoding. The app assumes you have the correct encoded values.")
+job_title = st.selectbox(
+    'Job Title', encoders['Job Title'].classes_
+)
+
+location = st.selectbox(
+    'Location', encoders['Location'].classes_
+)
+
+employment_status = st.selectbox(
+    'Employment Status', encoders['Employment Status'].classes_
+)
+
+job_roles = st.selectbox(
+    'Job Roles', encoders['Job Roles'].classes_
+)
+
+salaries_reported = st.number_input(
+    'Salaries Reported', min_value=1, value=3
+)
+
+# Prediction
+if st.button('🚀 Predict Salary'):
+    try:
+        # Encode selected values
+        features = pd.DataFrame([{
+            'Rating': rating,
+            'Company Name': encoders['Company Name'].transform([company_name])[0],
+            'Job Title': encoders['Job Title'].transform([job_title])[0],
+            'Salaries Reported': salaries_reported,
+            'Location': encoders['Location'].transform([location])[0],
+            'Employment Status': encoders['Employment Status'].transform([employment_status])[0],
+            'Job Roles': encoders['Job Roles'].transform([job_roles])[0]
+        }])
+
+        prediction = model.predict(features)[0]
+
+        st.success(f"💰 Predicted Salary: ₹{prediction:,.2f}")
+
+    except Exception as e:
+        st.error(f"❌ Prediction failed: {e}")
