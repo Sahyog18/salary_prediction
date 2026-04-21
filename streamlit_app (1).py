@@ -3,10 +3,36 @@ import pandas as pd
 import pickle
 from sklearn.preprocessing import LabelEncoder
 
-st.set_page_config(page_title="Salary Prediction App", layout="centered")
+st.set_page_config(page_title="Salary Predictor", layout="centered")
 
-st.title("💰 Salary Prediction App")
-st.write("Predict salary using categorical inputs (dropdowns).")
+# Custom CSS
+st.markdown("""
+<style>
+.main {
+    background-color: #0e1117;
+}
+h1 {
+    text-align: center;
+    color: #00f5c4;
+}
+.stButton>button {
+    background-color: #00f5c4;
+    color: black;
+    border-radius: 10px;
+    height: 3em;
+    width: 100%;
+    font-size: 16px;
+}
+.stSelectbox, .stNumberInput {
+    background-color: #262730;
+    border-radius: 10px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Title Section
+st.markdown("<h1>💰 Salary Prediction App</h1>", unsafe_allow_html=True)
+st.markdown("### 🚀 Predict salaries using Machine Learning")
 
 # Load model
 @st.cache_resource
@@ -20,14 +46,11 @@ model = load_model()
 try:
     df = pd.read_csv("Salary_Dataset_DataScienceLovers.csv")
 except:
-    st.error("Dataset not found")
+    st.error("❌ Dataset not found")
     st.stop()
 
-st.header("📌 Enter Employee Details")
-
-# Create encoders for each categorical column
+# Encoders
 encoders = {}
-
 categorical_cols = [
     'Company Name', 'Job Title', 'Location',
     'Employment Status', 'Job Roles'
@@ -38,37 +61,28 @@ for col in categorical_cols:
     df[col] = le.fit_transform(df[col])
     encoders[col] = le
 
-# Dropdown inputs (original values)
-rating = st.number_input('Rating', min_value=1.0, max_value=5.0, value=3.8)
+# Layout using columns
+st.markdown("## 📌 Enter Details")
 
-company_name = st.selectbox(
-    'Company Name', encoders['Company Name'].classes_
-)
+col1, col2 = st.columns(2)
 
-job_title = st.selectbox(
-    'Job Title', encoders['Job Title'].classes_
-)
+with col1:
+    rating = st.number_input("⭐ Rating", 1.0, 5.0, 3.8)
+    company_name = st.selectbox("🏢 Company", encoders['Company Name'].classes_)
+    job_title = st.selectbox("💼 Job Title", encoders['Job Title'].classes_)
 
-location = st.selectbox(
-    'Location', encoders['Location'].classes_
-)
+with col2:
+    location = st.selectbox("📍 Location", encoders['Location'].classes_)
+    employment_status = st.selectbox("📄 Employment Status", encoders['Employment Status'].classes_)
+    job_roles = st.selectbox("🧑‍💻 Job Role", encoders['Job Roles'].classes_)
 
-employment_status = st.selectbox(
-    'Employment Status', encoders['Employment Status'].classes_
-)
+salaries_reported = st.number_input("📊 Salaries Reported", 1, 100, 3)
 
-job_roles = st.selectbox(
-    'Job Roles', encoders['Job Roles'].classes_
-)
+st.markdown("---")
 
-salaries_reported = st.number_input(
-    'Salaries Reported', min_value=1, value=3
-)
-
-# Prediction
-if st.button('🚀 Predict Salary'):
+# Prediction Button
+if st.button("🚀 Predict Salary"):
     try:
-        # Encode selected values
         features = pd.DataFrame([{
             'Rating': rating,
             'Company Name': encoders['Company Name'].transform([company_name])[0],
@@ -81,7 +95,11 @@ if st.button('🚀 Predict Salary'):
 
         prediction = model.predict(features)[0]
 
-        st.success(f"💰 Predicted Salary: ₹{prediction:,.2f}")
+        st.markdown("## 🎯 Result")
+        st.success(f"💰 Estimated Salary: ₹ {prediction:,.0f}")
 
     except Exception as e:
-        st.error(f"❌ Prediction failed: {e}")
+        st.error(f"❌ Error: {e}")
+
+st.markdown("---")
+st.markdown("### ⚡ Built with Streamlit | AI Project")
