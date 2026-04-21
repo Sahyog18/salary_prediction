@@ -102,4 +102,3 @@ if st.button("🚀 Predict Salary"):
         st.error(f"❌ Error: {e}")
 
 st.markdown("---")
-st.markdown("### ⚡ Built with Streamlit | AI Project")
